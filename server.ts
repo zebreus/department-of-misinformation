@@ -13,6 +13,7 @@ import { UserPage } from "./pages/UserPage.tsx";
 import { debugLogger, federation, kv } from "./globals.ts";
 import { addFollower, getFollowers, removeFollower } from "./follower.ts";
 import { createNote } from "./note.ts";
+import { NotePage } from "./pages/NotePage.tsx";
 
 const userName = "me1";
 
@@ -213,10 +214,20 @@ Deno.serve(
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
     }
-    const userPageMatches = url.pathname.match(/\/users\/([^\/]+)[/]?$/);
+    const userPageMatches = url.pathname.match(/^\/users\/([^\/]+)[/]?$/);
     if (userPageMatches) {
       const handle = userPageMatches[1];
       return new Response((await UserPage({ handle: handle })).value, {
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    }
+    const notePageMatches = url.pathname.match(
+      /^\/users\/([^\/]+)[/]notes[/]([^\/]+)[/]?$/,
+    );
+    if (notePageMatches) {
+      const handle = notePageMatches[1];
+      const noteId = notePageMatches[2];
+      return new Response((await NotePage({ handle, noteId })).value, {
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
     }

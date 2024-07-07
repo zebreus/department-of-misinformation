@@ -2,6 +2,7 @@
 
 import { DatabaseFollower, getDatabaseFollowers } from "../follower.ts";
 import { DatabaseNote, getDatabaseNotes } from "../note.ts";
+import { Note } from "./NotePage.tsx";
 
 const Followers = (
     { followers }: { followers: DatabaseFollower[] },
@@ -20,23 +21,6 @@ const Followers = (
     );
 };
 
-const Note = ({ note }: { note: DatabaseNote }) => (
-    <li>
-        <dl id={`note-${note.id}`}>
-            <dt>Report No.</dt>
-            <dd>{note.id}</dd>
-            <dt>Date</dt>
-            <dd>
-                <time datetime={new Date(note.time).toISOString()}>
-                    {new Date(note.time).toISOString()}:
-                </time>
-            </dd>
-            <dt>Content</dt>
-            <dd>{note.content.replaceAll("<p>", "").replaceAll("</p>", "")}</dd>
-        </dl>
-    </li>
-);
-
 const Reports = (
     { notes }: { notes: DatabaseNote[] },
 ) => {
@@ -44,7 +28,11 @@ const Reports = (
         <>
             <h3 id="followers-list">Published reports</h3>
             <ul aria-label="followers-list">
-                {notes.map((note) => <Note note={note} />)}
+                {notes.map((note) => (
+                    <li>
+                        <Note note={note} />
+                    </li>
+                ))}
             </ul>
         </>
     );

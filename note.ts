@@ -83,3 +83,13 @@ export const getDatabaseNotes = async (handle: string) => {
     }
     return notes;
 };
+
+export const getDatabaseNote = async (handle: string, noteId: string) => {
+    // Work with the database to find the actors that are following the actor
+    // (the below `getFollowersByUserHandle` is a hypothetical function):
+    const note = await kv.get<DatabaseNote>(["notes", handle, noteId]);
+    if (!note?.value) {
+        throw new Error("Failed to find Note");
+    }
+    return note.value;
+};
