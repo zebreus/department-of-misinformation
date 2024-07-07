@@ -1,19 +1,6 @@
 /** @jsxImportSource jsr:@mary/jsx */
 
-const Followers = (
-  { followers, user }: { followers: string[]; user: string },
-) => {
-  return (
-    <figure>
-      <figcaption>Followers of {user}</figcaption>
-      <ul>
-        {followers.map((f) => <li>{f}</li>)}
-      </ul>
-    </figure>
-  );
-};
-
-export const MainPage = ({ followers }: { followers: string[] }) => {
+export const MainPage = () => {
   return (
     <>
       <html lang="en">
@@ -24,12 +11,15 @@ export const MainPage = ({ followers }: { followers: string[] }) => {
         </head>
 
         <body>
-          <h1>Department of Misinformation</h1>
+          <a href="/">
+            <h1>Department of Misinformation</h1>
+          </a>
           <p>
             There is currently only the test user{" "}
-            <em>me</em>. For now this page show info about that user
+            <a href="/users/me1">
+              <em>@me1</em>
+            </a>.
           </p>
-          <Followers followers={followers} user="me" />
         </body>
       </html>
     </>
