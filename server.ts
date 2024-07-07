@@ -1,19 +1,29 @@
 import {
   Accept,
+  Actor,
+  Context,
+  Create,
   createFederation,
   Endpoints,
   exportJwk,
   Follow,
   generateCryptoKeyPair,
   importJwk,
+  isActor,
+  lookupObject,
+  Note,
   Person,
+  PUBLIC_COLLECTION,
   Reject,
+  RequestContext,
   Undo,
 } from "@fedify/fedify";
-import { DenoKvStore } from "@fedify/fedify/x/denokv";
+import { DenoKvMessageQueue, DenoKvStore } from "@fedify/fedify/x/denokv";
 import { configure, getConsoleSink, getLogger } from "@logtape/logtape";
 import { behindProxy } from "@hongminhee/x-forwarded-fetch";
 import { MainPage } from "./pages/MainPage.tsx";
+import { satisfies } from "jsr:@std/semver@^0.224.3/satisfies";
+import { generateId } from "./helpers/generateId.ts";
 
 const userName = "me1";
 
@@ -22,7 +32,7 @@ const kv = await Deno.openKv("./kv.sqlite");
 await configure({
   sinks: { console: getConsoleSink() },
   filters: {},
-  loggers: [{ category: "fedify", sinks: ["console"], level: "info" }, {
+  loggers: [{ category: "fedify", sinks: ["console"], level: "debug" }, {
     category: "misinformation",
     sinks: ["console"],
     level: "debug",
@@ -34,7 +44,97 @@ const debugLogger = getLogger(["misinformation", "debug"]);
 
 const federation = createFederation<void>({
   kv: new DenoKvStore(kv),
+  queue: new DenoKvMessageQueue(kv),
 });
+
+const getFollowers = async (handle: string) => {
+  // Work with the database to find the actors that are following the actor
+  // (the below `getFollowersByUserHandle` is a hypothetical function):
+  const followers: Actor[] = [];
+  for await (
+    const entry of kv.list<string>({ prefix: ["followers", handle] })
+  ) {
+    // if (followers.includes(entry.value)) continue;
+    const actor = await lookupObject(entry.value);
+    if (!isActor(actor)) {
+      throw new Error(`object ${actor} is not an actor`);
+    }
+    if (!actor) {
+      continue;
+    }
+    followers.push(actor);
+  }
+  return followers;
+};
+
+const getFollowersIds = async (handle: string) => {
+  // Work with the database to find the actors that are following the actor
+  // (the below `getFollowersByUserHandle` is a hypothetical function):
+  const followers: string[] = [];
+  for await (
+    const entry of kv.list<string>({ prefix: ["followers", handle] })
+  ) {
+    if (followers.includes(entry.value)) continue;
+    followers.push(entry.value);
+  }
+  return followers;
+};
+
+type DatabaseNote = {
+  content: string;
+  time: number;
+  to: URL[];
+};
+
+const createNote = async (
+  ctx: Context<void>,
+  handle: string,
+  content: string,
+) => {
+  const followers = await getFollowers(handle);
+  const followerUrls = followers.flatMap((f) => f.id ? [new URL(f.id)] : []);
+  console.debug(followers);
+  const time = Temporal.Instant.fromEpochMilliseconds(Date.now());
+  const id = generateId();
+  const noteUrl = new URL(ctx.getActorUri(handle) + `/notes/${id}`);
+  const createUrl = new URL(ctx.getActorUri(handle) + `/notes/${id}/activity`);
+  const realContent = `<p>${content}</p>`;
+  kv.set(
+    ["notes", handle, id],
+    {
+      time: time.epochMilliseconds,
+      content: realContent,
+      to: followerUrls,
+    } satisfies DatabaseNote,
+  );
+
+  const note = new Note({
+    "summary": null,
+    replyTarget: null,
+    "published": time,
+    "ccs": [],
+    "sensitive": false,
+    "url": noteUrl,
+    id: noteUrl,
+    attribution: ctx.getActorUri(handle),
+    to: PUBLIC_COLLECTION,
+    content: realContent,
+  });
+  const create = new Create({
+    id: createUrl,
+    actor: ctx.getActorUri(handle),
+    to: PUBLIC_COLLECTION,
+    published: time,
+    object: note,
+  });
+  console.debug(await create.toJsonLd());
+  await ctx.sendActivity(
+    { handle: handle },
+    followers,
+    create,
+  );
+  activityLogger.info(`@${handle} posted: ${content}`);
+};
 
 const getOldKeypair = async (handle: string) => {
   const entry = await kv.get<{
@@ -96,6 +196,36 @@ const getEd25519Keypair = async (handle: string) => {
   const publicKey = await importJwk(entry.value.publicKey, "public");
   return { privateKey, publicKey };
 };
+
+federation
+  .setFollowersDispatcher(
+    "/users/{handle}/followers",
+    async (ctx, handle, cursor, baseUri) => {
+      // Work with the database to find the actors that are following the actor
+      // (the below `getFollowersByUserHandle` is a hypothetical function):
+      const followers: Actor[] = [];
+      for await (
+        const entry of kv.list<string>({ prefix: ["followers", handle] })
+      ) {
+        // if (followers.includes(entry.value)) continue;
+        const actor = await ctx.getActor(entry.value);
+        if (!actor) {
+          continue;
+        }
+        followers.push(actor);
+      }
+
+      // // Filter the actors by the base URI:
+      // if (baseUri != null) {
+      //   users = users.filter((actor) =>
+      //     actor.uri.href.startsWith(baseUri.href)
+      //   );
+      // }
+      // // Turn the users into `URL` objects:
+      // const items = users.map((actor) => actor.uri);
+      return { items: followers };
+    },
+  );
 
 federation
   .setActorDispatcher("/users/{handle}", async (ctx, handle) => {
@@ -192,6 +322,7 @@ federation
       // outbox?: OrderedCollection | URL | null;
       // following?: Collection | URL | null;
       // followers?: Collection | URL | null;
+      followers: ctx.getFollowersUri(handle),
       // liked?: Collection | URL | null;
       // featured?: Collection | URL | null;
       // featuredTags?: Collection | URL | null;
@@ -260,6 +391,8 @@ federation
     );
     activityLogger
       .info(`@${follower.preferredUsername}@todo followed @${parsed.handle}`);
+    await (new Promise((r) => setTimeout(r, 1000)));
+    await createNote(ctx, userName, "Someone just followed me!");
   })
   .on(Undo, async (ctx, undo) => {
     debugLogger.debug("Received undo");
@@ -294,6 +427,12 @@ federation
       actor,
       new Accept({ actor: follow.objectId, object: undo }),
     );
+
+    await ctx.sendActivity(
+      { handle: parsed.handle },
+      actor,
+      new Accept({ actor: follow.objectId, object: undo }),
+    );
   });
 
 Deno.serve(
@@ -316,3 +455,17 @@ Deno.serve(
     return federation.fetch(request, { contextData: undefined });
   }),
 );
+
+const decoder = new TextDecoder();
+for await (const chunk of Deno.stdin.readable) {
+  const text = decoder.decode(chunk);
+  // do something with the text
+  console.log("hey");
+  federation.createContext;
+  const context = federation.createContext(
+    new URL(
+      "https://8000-zebreus-departmentofmis-v153bp49bfo.ws-eu115.gitpod.io",
+    ),
+  );
+  await createNote(context, userName, "Meow, " + text);
+}
