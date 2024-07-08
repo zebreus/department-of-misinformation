@@ -1,9 +1,4 @@
-{
-  stdenv,
-  lib,
-  buildDenoApplication,
-  ...
-}:
+{ lib, buildDenoApplication, ... }:
 buildDenoApplication {
   pname = "department-of-misinformation";
   version = "0-unstable";

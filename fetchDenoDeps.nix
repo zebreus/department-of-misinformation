@@ -15,7 +15,7 @@
       denoJson ? "deno.json",
       src,
       ...
-    }@args:
+    }:
     stdenvNoCC.mkDerivation (
       {
         inherit name src;
@@ -122,25 +122,13 @@
         '';
 
         installPhase = ''
-          ls -a
           mkdir -p $out
 
           # Place vendored https modules in out
           mv vendor $out
 
           # Place node_modules in out
-          # for link in $(find node_modules -type f | sort) ; do
-          #   md5sum "$link" >> $out/debug3.txt
-          # done
-
-
           mv node_modules $out/node_modules
-          # for link in $(find $out/node_modules -type l | sort) ; do
-          #   ln --force --symbolic --no-dereference --relative "$(readlink --canonicalize "$link")" "$link"
-          #   readlink $link
-          #   # cp -rL "$(readlink --canonicalize "$link")" "$link"
-          # done
-
 
           # Place lockfile hash in out
           echo "$LOCKFILE_HASH" | cut -d' ' -f1 > $out/lockfile.hash
