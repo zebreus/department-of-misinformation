@@ -20,8 +20,8 @@
             inherit system;
             overlays = [
               (final: prev:
-
-                import ./fetchDenoDeps.nix { inherit (prev.pkgs) stdenvNoCC deno jq coreutils gnused lib; }
+                (import ./fetchDenoDeps.nix { inherit (final.pkgs) stdenvNoCC deno jq coreutils gnused lib; }) //
+                (import ./buildDenoApplication.nix { inherit (final.pkgs) stdenvNoCC deno fetchDenoDeps; })
               )
             ];
           };

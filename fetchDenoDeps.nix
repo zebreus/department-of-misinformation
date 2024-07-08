@@ -1,5 +1,4 @@
 { stdenvNoCC
-, lib
 , deno
 , jq
 , gnused
@@ -67,8 +66,9 @@
         fi
 
         export LOCKFILE_HASH=$(sha256sum "$LOCKFILE" | cut -d' ' -f1)
-        deno cache -c '${denoJson}' --vendor=true ${mainFile}
+        deno cache -c '${denoJson}' --vendor=true --node-modules-dir=true ${mainFile}
         LOCKFILE_HASH_AFTER=$(sha256sum "$LOCKFILE" | cut -d' ' -f1)
+
 
         if test "$LOCKFILE_HASH" != "$LOCKFILE_HASH_AFTER" ; then
           echo "error: Your lockfile changed while running 'deno cache ${mainFile}'. We cant do reproducible builds this way. You probably have unlocked imports somewhere in your code. To fix this run 'deno cache ${mainFile}' and commit the changed lockfile." >&2
@@ -92,9 +92,42 @@
       '';
 
       installPhase = ''
+        ls -a
         mkdir -p $out
+
+        # Place vendored https modules in out
         mv vendor $out
+
+        # Place node_modules in out
+        for link in $(find node_modules -type l | sort) ; do
+          ln --force --symbolic --no-dereference --relative "$(readlink --canonicalize "$link")" "$link"
+        done
+        # for link in $(find node_modules -type f | sort) ; do
+        #   md5sum "$link" >> $out/debug3.txt
+        # done
+
+        # These two files are not reproducible
+        rm node_modules/.deno/.deno.lock.poll
+        rm node_modules/.deno/.setup-cache.bin
+        mv node_modules $out/node_modules
+
+        # Place lockfile hash in out
         echo "$LOCKFILE_HASH" | cut -d' ' -f1 > $out/lockfile.hash
+
+        # Place the required parts of the deno dir in out
+        # We do this weird dance with jq to make sure the content of the files is sorted, because by default it is not. 
+        cd $DENO_DIR/npm
+        for file in $(find . -type f -name '*.json' | sort | grep registry.json) ; do
+          target_file="$out/deno/npm/$file"
+          mkdir -p "$(dirname "$target_file")"
+          # echo '###############################################################################'
+          # echo $file
+          # cat $file
+
+          jq -Sc '.' "$file" > "$target_file"
+          # jq -S '.versions = ( .versions | with_entries( select(.key == ("5.1.0", "other")) ) )'
+        done
+        cd -
       '';
 
       # specify the content hash of this derivations output
