@@ -1,2 +1,4 @@
 kv.sqlite*
 result
+vendor
+node_modules

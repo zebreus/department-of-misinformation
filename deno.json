@@ -7,6 +7,5 @@
     "@mary/jsx": "jsr:@mary/jsx@^0.1.0"
   },
   "vendor": true,
-  "nodeModulesDir": true,
-  "importMap": "./vendor/import_map.json"
+  "nodeModulesDir": true
 }

@@ -270,18 +270,6 @@
       }
     }
   },
-  "redirects": {
-    "https://deno.land/x/clay/mod.ts": "https://deno.land/x/clay@v0.2.4/mod.ts"
-  },
-  "remote": {
-    "https://deno.land/x/clay@v0.2.4/mod.ts": "e54e1908053d12bd468c379e94042d9220e757ab86565182147901fe101e5528",
-    "https://deno.land/x/clay@v0.2.4/src/command.ts": "0388a626bcd145e85ad989b7628cf49d482186ad984f68ea767b234df540a0e6",
-    "https://deno.land/x/clay@v0.2.4/src/distance.ts": "0a022352484e162c83d47f12de5b79f8b7d0eb1aabcaef0d982165f1216c8a48",
-    "https://deno.land/x/clay@v0.2.4/src/error.ts": "ece1734903a5ece9d60bb27b26d8912e79a6d61fb9951b9c90d143216cbb65a0",
-    "https://deno.land/x/clay@v0.2.4/src/fmt.ts": "f3c2e2f77858d988849bf76c1c1a8e0752bca8b65834b42e8f238cb3a0465058",
-    "https://deno.land/x/clay@v0.2.4/src/group.ts": "cc3e5b97c1cb91947f39c9ab32d5b5f8fb7ead06916f458a85c2e8a587c5d1cc",
-    "https://deno.land/x/clay@v0.2.4/src/types.ts": "accf4c56aafc1a1ff7d113466769f15b2de7d0a908c28e5988b5b64ef42afdb3"
-  },
   "workspace": {
     "dependencies": [
       "jsr:@fedify/fedify@^0.11.1",

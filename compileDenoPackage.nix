@@ -1,9 +1,10 @@
-{ stdenv
-, lib
-, deno
-, fetchDenoDeps
-, fetchurl
-, unzip
+{
+  stdenv,
+  lib,
+  deno,
+  fetchDenoDeps,
+  fetchurl,
+  unzip,
 }:
 let
   deps = fetchDenoDeps {
@@ -23,7 +24,10 @@ stdenv.mkDerivation {
 
   src = ./.;
 
-  nativeBuildInputs = [ deno unzip ];
+  nativeBuildInputs = [
+    deno
+    unzip
+  ];
 
   buildPhase = ''
     ERROR_OCCURRED=false

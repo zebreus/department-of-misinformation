@@ -1,7 +1,8 @@
-{ stdenv
-, lib
-, buildDenoApplication
-, ...
+{
+  stdenv,
+  lib,
+  buildDenoApplication,
+  ...
 }:
 buildDenoApplication {
   pname = "department-of-misinformation";
@@ -10,7 +11,7 @@ buildDenoApplication {
   src = ./.;
 
   mainFile = "server.ts";
-  depsHash = "sha256-ZdJ0AhiB9JU3pcPibcVW+xZwkdfHisKEx6ll22IJmac=";
+  depsHash = "sha256-9Jww8A2tDxHgouVSx+1MCJ6TGc54HFo8+hAm+DNTTNk=";
 
   meta = {
     description = "An experimental activitypub server where my infra can post status updates";
