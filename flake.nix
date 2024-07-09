@@ -30,7 +30,21 @@
                   lib
                   ;
               })
-              // (import ./buildDenoApplication.nix { inherit (final.pkgs) stdenvNoCC deno fetchDenoDeps; })
+              // (import ./buildDenoApplication.nix {
+                inherit (final.pkgs)
+                  stdenvNoCC
+                  stdenv
+                  deno
+                  fetchDenoDeps
+                  fetchurl
+                  xxd
+                  unzip
+                  util-linux
+                  glibc
+                  libgcc
+                  gcc
+                  ;
+              })
               // {
                 deno = prev.deno.overrideAttrs (oldAttrs: {
                   src = final.fetchFromGitHub {
